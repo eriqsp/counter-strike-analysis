@@ -45,6 +45,8 @@ class HLTVScraper(Logger):
             time.sleep(15)
 
             soup = BeautifulSoup(self.driver.page_source, 'html.parser')
+            if self._check_empty_page(soup):
+                return []
 
             match_ids = []
             all_links = soup.find_all('a', href=True)
@@ -64,6 +66,11 @@ class HLTVScraper(Logger):
         except Exception as e:
             self.log(f"Error getting match links: {e}")
             return []
+
+    @staticmethod
+    def _check_empty_page(soup: BeautifulSoup) -> bool:
+        empty = soup.find('div', string='No results with the chosen filters')
+        return False if empty is None else True
 
     def _scrape_match_page(self, match_id):
         try:
@@ -125,17 +132,17 @@ class HLTVScraper(Logger):
 
             return False
 
-    def scrape_all_matches(self, num_matches=100):
+    def scrape_all_matches(self):
         files = glob(os.path.join(self.filepath, '*.csv'))
 
         try:
-            offset = 1700  # TODO
+            offset = 0
             consecutive_failures = 0
 
-            while len(files) < num_matches:
+            while consecutive_failures < 2:
                 self.log(f"\n{'=' * 60}")
                 self.log(f"Processing results page (offset {offset})")
-                self.log(f"Progress: {len(files)}/{num_matches} matches")
+                self.log(f"Progress: {len(files)} matches")
                 self.log(f"{'=' * 60}\n")
 
                 match_ids = self._get_match_links(offset)
@@ -144,25 +151,18 @@ class HLTVScraper(Logger):
                     consecutive_failures += 1
                     self.log(f"No matches found (failure #{consecutive_failures})")
 
-                    if consecutive_failures >= 3:
-                        self.log("Too many consecutive failures. Stopping.")
-                        break
-
                     offset += 100
                     continue
 
                 consecutive_failures = 0  # reset on success
 
                 for match_id in match_ids:
-                    if len(files) >= num_matches:
-                        break
-
                     # skip if already scraped
                     if any(match_id in m for m in files):
-                        self.log(f"({len(files) + 1}/{num_matches}) Skipping {match_id} (already scraped)")
+                        self.log(f"({len(files) + 1}) Skipping {match_id} (already scraped)")
                         continue
 
-                    self.log(f"\n({len(files) + 1}/{num_matches}) Scraping match {match_id}")
+                    self.log(f"\n({len(files) + 1}) Scraping match {match_id}")
 
                     # get match page data
                     match_data = self._scrape_match_page(match_id)
@@ -170,9 +170,6 @@ class HLTVScraper(Logger):
                     if match_data:
                         filename = os.path.join(self.filepath, fr'match_{match_id}.csv')
                         files.append(filename)
-
-                if len(files) >= num_matches:
-                    break
 
                 offset += 100  # move to next page
 

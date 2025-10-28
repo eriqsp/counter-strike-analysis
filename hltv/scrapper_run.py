@@ -10,4 +10,4 @@ load_dotenv()
 hltv_filter = "&startDate=2024-01-01&endDate=2025-10-23&stars=1"
 
 scrap = HLTVScraper(os.getenv('FILEPATH'), hltv_filter=hltv_filter)
-scrap.scrape_all_matches(num_matches=2267)  # 2267 is the total number of matches for the filter applied
+scrap.scrape_all_matches()
