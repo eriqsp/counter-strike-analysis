@@ -19,3 +19,5 @@ class Logger:
                 message = f'[{formatted_time}] {message}'
 
         print(message)
+
+# test commit
