@@ -14,7 +14,7 @@ class DataCleaning:
         self.logger = logger
         self.filepath = filepath
 
-        # columns to exclude from each file
+        # columns to exclude
         self.drop_columns = ['Op.eK-eD', 'eKAST', 'eK(hs)', 'eD(t)', 'eADR', 'KAST.1', 'eKAST.1', '1', '2', '3', '4', '5']
 
     def second_stage_df(self, df: pd.DataFrame):
