@@ -11,9 +11,8 @@ import urllib.error
 from logger import Logger
 
 
-class HLTVScraper(Logger):
-    def __init__(self, filepath: str, hltv_filter: str = None):
-        super().__init__()
+class HLTVScraper:
+    def __init__(self, logger: Logger, filepath: str, hltv_filter: str = None):
         options = uc.ChromeOptions()
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--window-position=-32000,-32000")  # hide window from screen; couldn't do headless, using this instead so one can use the computer screen
@@ -26,7 +25,8 @@ class HLTVScraper(Logger):
         self.driver = uc.Chrome(options=options)
         self.delay = 2
 
-        self.log("Opening HLTV.org...")
+        self.logger = logger
+        self.logger.log("Opening HLTV.org...")
         self.driver.get("https://www.hltv.org")
         time.sleep(self.delay)
 
@@ -39,7 +39,7 @@ class HLTVScraper(Logger):
             url = url + self.filter
 
         try:
-            self.log(f"Loading results page (offset {offset})...")
+            self.logger.log(f"Loading results page (offset {offset})...")
             if not self._safe_get(url):
                 return []
             time.sleep(15)
@@ -58,13 +58,13 @@ class HLTVScraper(Logger):
                     if match_id not in match_ids:
                         match_ids.append(match_id)
 
-            self.log(f"Found {len(match_ids)} match links")
+            self.logger.log(f"Found {len(match_ids)} match links")
             time.sleep(self.delay)
 
             return match_ids
 
         except Exception as e:
-            self.log(f"Error getting match links: {e}")
+            self.logger.log(f"Error getting match links: {e}")
             return []
 
     @staticmethod
@@ -74,7 +74,7 @@ class HLTVScraper(Logger):
 
     def _scrape_match_page(self, match_id):
         try:
-            self.log('Loading match page...')
+            self.logger.log('Loading match page...')
             url = f"https://www.hltv.org/matches/{match_id}/x"
             if not self._safe_get(url):
                 return False
@@ -120,15 +120,15 @@ class HLTVScraper(Logger):
 
             filename = os.path.join(self.filepath, fr'match_{match_id}.csv')
             pd.concat(dfs).to_csv(filename, index=False)
-            self.log(f'File {filename} saved!')
+            self.logger.log(f'File {filename} saved!')
             return True
 
         except Exception as e:
             if "invalid session id" in str(e).lower():
-                self.log(f'Error scrapping match page. Trying to reconnect to chrome...')
+                self.logger.log(f'Error scrapping match page. Trying to reconnect to chrome...')
                 self._restart_chrome()
             else:
-                self.log(f'Error scrapping match page: {str(e)}')
+                self.logger.log(f'Error scrapping match page: {str(e)}')
 
             return False
 
@@ -140,16 +140,16 @@ class HLTVScraper(Logger):
             consecutive_failures = 0
 
             while consecutive_failures < 2:
-                self.log(f"\n{'=' * 60}")
-                self.log(f"Processing results page (offset {offset})")
-                self.log(f"Progress: {len(files)} matches")
-                self.log(f"{'=' * 60}\n")
+                self.logger.log(f"\n{'=' * 60}")
+                self.logger.log(f"Processing results page (offset {offset})")
+                self.logger.log(f"Progress: {len(files)} matches")
+                self.logger.log(f"{'=' * 60}\n")
 
                 match_ids = self._get_match_links(offset)
 
                 if not match_ids:
                     consecutive_failures += 1
-                    self.log(f"No matches found (failure #{consecutive_failures})")
+                    self.logger.log(f"No matches found (failure #{consecutive_failures})")
 
                     offset += 100
                     continue
@@ -159,10 +159,10 @@ class HLTVScraper(Logger):
                 for match_id in match_ids:
                     # skip if already scraped
                     if any(match_id in m for m in files):
-                        self.log(f"({len(files) + 1}) Skipping {match_id} (already scraped)")
+                        self.logger.log(f"({len(files) + 1}) Skipping {match_id} (already scraped)")
                         continue
 
-                    self.log(f"\n({len(files) + 1}) Scraping match {match_id}")
+                    self.logger.log(f"\n({len(files) + 1}) Scraping match {match_id}")
 
                     # get match page data
                     match_data = self._scrape_match_page(match_id)
@@ -174,14 +174,14 @@ class HLTVScraper(Logger):
                 offset += 100  # move to next page
 
         except KeyboardInterrupt:
-            self.log(f"Interrupted! {len(files)} matches saved...")
+            self.logger.log(f"Interrupted! {len(files)} matches saved...")
 
         except Exception as e:
-            self.log(f"Unexpected error: {e}")
-            self.log(f"Saved {len(files)} matches before error")
+            self.logger.log(f"Unexpected error: {e}")
+            self.logger.log(f"Saved {len(files)} matches before error")
 
         finally:
-            self.log("Closing browser...")
+            self.logger.log("Closing browser...")
             self._safe_close()
 
     def _safe_get(self, url, max_retries=3):
@@ -190,28 +190,28 @@ class HLTVScraper(Logger):
                 self.driver.get(url)
                 return True
             except (socket.gaierror, urllib.error.URLError) as e:
-                self.log(f"Network error: {e} (attempt {attempt + 1}/{max_retries})")
+                self.logger.log(f"Network error: {e} (attempt {attempt + 1}/{max_retries})")
                 time.sleep(5 * (attempt + 1))
             except Exception as e:
                 if "invalid session id" in str(e).lower():
-                    self.log("Session dead, restarting Chrome...")
+                    self.logger.log("Session dead, restarting Chrome...")
                     self._restart_chrome()
                 else:
-                    self.log(f"Other error while loading {url}: {e}")
+                    self.logger.log(f"Other error while loading {url}: {e}")
                 time.sleep(5)
-        self.log(f"Failed to load {url} after {max_retries} retries")
+        self.logger.log(f"Failed to load {url} after {max_retries} retries")
         return False
 
     def _safe_close(self):
         try:
             self.driver.quit()
         except InvalidSessionIdException:
-            self.log("Driver already quit (ignored)")
+            self.logger.log("Driver already quit (ignored)")
         except Exception as e:
-            self.log(f"Error quitting driver: {e}")
+            self.logger.log(f"Error quitting driver: {e}")
 
     def _restart_chrome(self, wait_time: int = 60):
-        self.log("\nRestarting Chrome driver...")
+        self.logger.log("\nRestarting Chrome driver...")
         self._safe_close()
         time.sleep(wait_time)  # quit driver and wait before restarting (trying to avoid connection timeout)
 
@@ -226,6 +226,6 @@ class HLTVScraper(Logger):
 
         self.driver = uc.Chrome(options=options)
 
-        self.log("Reopening HLTV.org...")
+        self.logger.log("Reopening HLTV.org...")
         self.driver.get("https://www.hltv.org")
         time.sleep(self.delay)
