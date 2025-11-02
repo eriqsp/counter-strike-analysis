@@ -5,20 +5,36 @@ import os
 import re
 
 
-# TODO: modify columns
-# TODO: count number of matches for each player (if below a threshold, delete data for player)
+# TODO: standardize numeric features
+# TODO: PCA? and then cluster?
 
 
 class DataCleaning:
     def __init__(self, logger: Logger, filepath: str):
         self.logger = logger
         self.filepath = filepath
+        self.threshold_matches = 1
 
         # columns to exclude
         self.drop_columns = ['Op.eK-eD', 'eKAST', 'eK(hs)', 'eD(t)', 'eADR', 'KAST.1', 'eKAST.1', '1', '2', '3', '4', '5']
+        # columns to keep; I won't keep the team for now, because some players might have changed teams in the meantime so it can be noisy
+        self.keep_columns = ['players', 'KAST', 'ADR', 'Swing', 'hs', 'opk', 'opd', '1vsX']
 
-    def second_stage_df(self, df: pd.DataFrame):
-        df['Op.K-D'] = df['Op.K-D'].apply(self._modify_opk)
+    def third_stage_df(self):
+        df = self.second_stage_df().copy()
+
+        # filtering to keep only the players with more than a certain amount of matches
+        match_counts = df['players'].value_counts()
+        players_with_enough_matches = match_counts[match_counts >= self.threshold_matches].index
+        df_filtered = df[df['players'].isin(players_with_enough_matches)]
+
+        # average numeric features per player; the clustering will represent the players styles
+        player_means = df_filtered.groupby('players').mean(numeric_only=True).reset_index()
+        return player_means
+
+    def second_stage_df(self):
+        df = self.first_stage_df().copy()
+
         cols = ['K(hs)', 'A(f)', 'D(t)']
         for col in cols:
             if col != 'A(f)':
@@ -27,8 +43,19 @@ class DataCleaning:
 
             df[re.sub(r'\([a-z]+\)', '', col)] = df[col].apply(self._modify_kad_exclude)
 
-        df = df.drop(cols, axis=1)
-        return df
+        df[['opk', 'opd']] = df['Op.K-D'].str.split(' : ', n=1, expand=True).astype(int)
+        df['opk'] = df.apply(lambda r: r['opk'] / r['K'] if r['K'] != 0 else 0, axis=1)
+        df['opd'] = df.apply(lambda r: r['opd'] / r['D'] if r['D'] != 0 else 0, axis=1)
+
+        df['KAST'] = df['KAST'].apply(self._modify_perc_columns)
+        df['Swing'] = df['Swing'].apply(self._modify_perc_columns)
+
+        return df[self.keep_columns]
+
+    @staticmethod
+    def _modify_perc_columns(value: str):
+        value = re.sub(r'\+|-|%', '', value)
+        return float(value) / 100
 
     @staticmethod
     def _modify_kad_exclude(value: str):
@@ -41,11 +68,6 @@ class DataCleaning:
         g1 = int(groups.group(1))
         g2 = int(groups.group(2))
         return (g2 / g1) if g1 != 0 else 0
-
-    @staticmethod
-    def _modify_opk(op_kd: str):
-        value = op_kd.split(' : ')
-        return int(value[0]) - int(value[1])
 
     def first_stage_df(self):
         files = glob(os.path.join(self.filepath, r'*.csv'))
@@ -78,3 +100,12 @@ class DataCleaning:
         df['match'] = match_number
         df = df.rename(columns={'OpK-D': 'Op.K-D'})
         return df
+
+
+
+""" teste """
+logger = Logger()
+dc = DataCleaning(logger, r'C:\Data\hltv\test')
+
+df1 = dc.third_stage_df()
+print()
