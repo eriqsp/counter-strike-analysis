@@ -5,15 +5,11 @@ import os
 import re
 
 
-# TODO: standardize numeric features
-# TODO: PCA? and then cluster?
-
-
 class DataCleaning:
-    def __init__(self, logger: Logger, filepath: str):
+    def __init__(self, logger: Logger, filepath: str, threshold_matches: int = 50):
         self.logger = logger
         self.filepath = filepath
-        self.threshold_matches = 1
+        self.threshold_matches = threshold_matches
 
         # columns to exclude
         self.drop_columns = ['Op.eK-eD', 'eKAST', 'eK(hs)', 'eD(t)', 'eADR', 'KAST.1', 'eKAST.1', '1', '2', '3', '4', '5']
@@ -100,12 +96,3 @@ class DataCleaning:
         df['match'] = match_number
         df = df.rename(columns={'OpK-D': 'Op.K-D'})
         return df
-
-
-
-""" teste """
-logger = Logger()
-dc = DataCleaning(logger, r'C:\Data\hltv\test')
-
-df1 = dc.third_stage_df()
-print()
