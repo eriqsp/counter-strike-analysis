@@ -6,10 +6,11 @@ import re
 
 
 class DataCleaning:
-    def __init__(self, logger: Logger, filepath: str, threshold_matches: int = 50):
+    def __init__(self, logger: Logger, filepath: str, threshold_matches: int = 50, verbose=True):
         self.logger = logger
         self.filepath = filepath
         self.threshold_matches = threshold_matches
+        self.verbose = verbose
 
         # columns to exclude
         self.drop_columns = ['Op.eK-eD', 'eKAST', 'eK(hs)', 'eD(t)', 'eADR', 'KAST.1', 'eKAST.1', '1', '2', '3', '4', '5']
@@ -17,7 +18,7 @@ class DataCleaning:
         self.keep_columns = ['players', 'KAST', 'ADR', 'Swing', 'hs', 'opk', 'opd', '1vsX']
 
     def third_stage_df(self):
-        df = self.second_stage_df().copy()
+        df = self._second_stage_df().copy()
 
         # filtering to keep only the players with more than a certain amount of matches
         match_counts = df['players'].value_counts()
@@ -28,8 +29,8 @@ class DataCleaning:
         player_means = df_filtered.groupby('players').mean(numeric_only=True).reset_index()
         return player_means
 
-    def second_stage_df(self):
-        df = self.first_stage_df().copy()
+    def _second_stage_df(self):
+        df = self._first_stage_df().copy()
 
         cols = ['K(hs)', 'A(f)', 'D(t)']
         for col in cols:
@@ -65,18 +66,18 @@ class DataCleaning:
         g2 = int(groups.group(2))
         return (g2 / g1) if g1 != 0 else 0
 
-    def first_stage_df(self):
+    def _first_stage_df(self):
         files = glob(os.path.join(self.filepath, r'*.csv'))
         if len(files) == 0:
             self.logger.log(f'ERROR: No .csv files in the folder {self.filepath}')
             return
 
-        dfs = [self.read_dataframe(file, match_number) for match_number, file in enumerate(files)]
+        dfs = [self._read_dataframe(file, match_number) for match_number, file in enumerate(files)]
         df = pd.concat(dfs, ignore_index=True)
         df = df.dropna(subset=['Rating3.0']).drop(self.drop_columns, axis=1, errors='ignore')
         return df
 
-    def read_dataframe(self, filename: str, match_number: int):
+    def _read_dataframe(self, filename: str, match_number: int):
         """
         Op.K-D: Opening kills:death
         MKs: Rounds with two or more kills
@@ -90,7 +91,8 @@ class DataCleaning:
         Rating3.0: Overall performance score for the match
         """
 
-        self.logger.log(f'Opening {filename}...')
+        if self.verbose:
+            self.logger.log(f'Opening {filename}...')
 
         df = pd.read_csv(filename)
         df['match'] = match_number
