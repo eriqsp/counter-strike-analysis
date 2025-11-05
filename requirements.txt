@@ -9,3 +9,4 @@ scikit-learn~=1.4.2
 matplotlib~=3.5.2
 numpy~=1.24.4
 plotly~=5.24.1
+dash~=3.0.4
