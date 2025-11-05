@@ -1,5 +1,4 @@
 from logger import Logger
-from cleaning import DataCleaning
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
@@ -11,12 +10,8 @@ import numpy as np
 # TODO: collect and identify in-game roles for each cluster (opener, awper, closer, etc.)
 
 
-def final_data(logger: Logger, filepath: str, n_clusters: int, n_components: int, elbow=False):
-    logger.log('Cleaning data...')
-    dc = DataCleaning(logger, filepath, verbose=False)
-    df = dc.third_stage_df()
-
-    features_x = df.select_dtypes(include=['float64', 'int64'])
+def final_data(df_base: pd.DataFrame, logger: Logger, n_clusters: int, n_components: int, elbow=False):
+    features_x = df_base.select_dtypes(include=['float64', 'int64'])
 
     scaler = StandardScaler()
     x_scaled = scaler.fit_transform(features_x)
@@ -28,10 +23,10 @@ def final_data(logger: Logger, filepath: str, n_clusters: int, n_components: int
         exit()
 
     logger.log('Assigning clusters (using k-means)...')
-    df['cluster'] = assign_clusters(x_scaled, k=n_clusters)
+    df_base['cluster'] = assign_clusters(x_scaled, k=n_clusters)
 
     logger.log('Applying PCA...')
-    return apply_pca(x_scaled, df, n_components=n_components)
+    return apply_pca(x_scaled, df_base, n_components=n_components)
 
 
 # applying PCA to reduce dimension and then visualize the clusters
