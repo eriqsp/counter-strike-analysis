@@ -22,10 +22,10 @@ def final_data(df_base: pd.DataFrame, logger: Logger, n_clusters: int, n_compone
         elbow_plot(x_scaled)
         exit()
 
-    logger.log('Assigning clusters (using k-means)...')
+    logger.log(f'Assigning clusters (using k-means, {n_clusters} clusters)...')
     df_base['cluster'] = assign_clusters(x_scaled, k=n_clusters)
 
-    logger.log('Applying PCA...')
+    logger.log(f'Applying PCA ({n_components} variables)...')
     return apply_pca(x_scaled, df_base, n_components=n_components)
 
 
