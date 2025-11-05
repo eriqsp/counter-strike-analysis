@@ -4,7 +4,6 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 import pandas as pd
-import numpy as np
 
 
 # TODO: collect and identify in-game roles for each cluster (opener, awper, closer, etc.)
@@ -34,10 +33,11 @@ def apply_pca(x, df_players, n_components=2):
     pca = PCA(n_components=n_components)
     x_pca = pca.fit_transform(x)
 
-    # compute how much the new PCA variables explain the original set of variables
-    explained_variance_ratio = pca.explained_variance_ratio_
-    cumulative_explained_variance = np.cumsum(explained_variance_ratio)
-    print(f'Total explained variance: {cumulative_explained_variance[-1]:.2f}')
+    # uncomment the lines below to see how much the new PCA variables explain the original set of variables
+    # import numpy as np
+    # explained_variance_ratio = pca.explained_variance_ratio_
+    # cumulative_explained_variance = np.cumsum(explained_variance_ratio)
+    # print(f'Total explained variance: {cumulative_explained_variance[-1]:.2f}')
 
     df = pd.DataFrame(x_pca, columns=[f'PC{i}' for i in range(1, n_components + 1)])
     df['player'] = df_players['players']

@@ -90,7 +90,8 @@ def generate_fig(dimension=2, n_clusters=4):
         ),
         plot_bgcolor="#1e1e1e",
         paper_bgcolor="#1e1e1e",
-        margin=dict(t=50, b=50)
+        margin=dict(t=50, b=50),
+        height=700
     )
     return fig
 
@@ -115,15 +116,16 @@ app.layout = dbc.Container([
             dbc.Col(
                 dcc.Graph(figure=generate_fig(dimension=2, n_clusters=5)),
                 width=6
-            ),
+            )
         ], className='mb-5'),
 
-        dbc.Row([
-            dbc.Col(
-                dcc.Graph(figure=generate_fig(dimension=3, n_clusters=4)),
-                width=6
-            )
-        ], className='mb-5')
+        # uncomment below to visualize the 3D plot (3 PCs)
+        # dbc.Row([
+        #     dbc.Col(
+        #         dcc.Graph(figure=generate_fig(dimension=3, n_clusters=4)),
+        #         width=6
+        #     )
+        # ], className='mb-5')
     ])
 ], fluid=True, style={'backgroundColor': '#121212', 'minHeight': '100vh', 'paddingBottom': '50px'})
 
