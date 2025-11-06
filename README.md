@@ -53,8 +53,13 @@ The features used to make the analysis are: KAST, ADR, Swing, %HS (percentual he
 ## About the Performance
 The way I assessed the clustering performance was by using the data available online from the players, manually checking if the players
 from the same role are in the same cluster. One alternative would be to build a list with players and roles 
-and then check the cluster performance based off on the list. I know some players are assigned wrong roles (e.g. blameF as AWPer, Boombl4 as Entry Fragger, etc.), 
-but those are closer to the middle of the plot, where it is more difficult to accurately predict the player's in-game role.
+and then check the cluster performance based off on the list.
+
+I know some players are assigned wrong roles (e.g. blameF as AWPer, Boombl4 as Entry Fragger, etc.), 
+but those are closer to the middle of the plot, where it is more difficult to accurately predict the player's in-game role. 
+At the same time, this work could suggest that some players play a slightly different role than what he is assigned to do, or even a mixture of more than one role. For example, 
+the clustering suggests that the player Magisk has a more Support role, but his point on the plot is closer enough to that of a Lurker player, in which he actually also plays a role at some maps 
+(at least when he was in the team Falcons).
 
 ## Feature Selection
 I have tried to add other features like "traded" and "flash assists" but the clusters got worst
