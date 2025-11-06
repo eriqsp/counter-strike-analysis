@@ -7,6 +7,8 @@ It is an end-to-end project: web-scraping, data handling, feature engineering an
 The data retrieved is from January 2024 to October 2025, using the filter of 1 star on the matches 
 (1 star = match that contains at least one team ranked top 20).
 
+The features used to make the analysis are: KAST, ADR, Swing, %HS (percentual headshots), %Opening Kills (opening kills by total kills), %Opening Deaths (opening deaths by total deaths), 1vsX (clutches).
+
 ## Project Structure
 - `hltv`:
   - Scraps data from the website hltv.org using BeautifulSoup, Selenium and undetected_chromedriver
@@ -71,7 +73,7 @@ The roles in this case are:
 
 ## PCA
 I've applied the PCA (Principal Component Analysis) framework after the clustering to visualize the clusters
-in a 2D space. In this case, 2 PCs explain 64% of the total number of variables (6). 3 PCs explain 79%.
+in a 2D space. In this case, 2 PCs explain 64% of the total number of variables (7). 3 PCs explain 79%.
 In the 2D space you can have a clear view of the clusters and its boundaries. The 3D figure (using 3 PCs) is not as 
 good, so I hid it.
 
